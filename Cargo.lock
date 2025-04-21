@@ -3,15 +3,6 @@
 version = 4
 
 [[package]]
-name = "atelier"
-version = "0.1.0"
-dependencies = [
- "pretty_assertions",
- "test-case",
- "thiserror",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -22,6 +13,15 @@ name = "diff"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56254986775e3233ffa9c4d7d3faaf6d36a2c09d30b20687e9f88bc8bafc16c8"
+
+[[package]]
+name = "js-workspace"
+version = "0.1.0"
+dependencies = [
+ "pretty_assertions",
+ "test-case",
+ "thiserror",
+]
 
 [[package]]
 name = "pretty_assertions"
