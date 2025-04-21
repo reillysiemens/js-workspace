@@ -25,14 +25,6 @@ pub struct ParseManagerError(String);
 #[error("Invalid manager file: {0}")]
 pub struct InvalidFileError(PathBuf);
 
-#[derive(Debug, PartialEq, Eq, thiserror::Error)]
-pub enum Error {
-    #[error(transparent)]
-    Parse(#[from] ParseManagerError),
-    #[error(transparent)]
-    InvalidFile(#[from] InvalidFileError),
-}
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum Manager {
     Yarn,
@@ -117,13 +109,29 @@ mod tests {
         assert_eq!(actual, expected);
     }
 
-    #[test_case(Manager::Yarn, &Path::new("yarn.lock"))]
-    #[test_case(Manager::Pnpm, &Path::new("pnpm-workspace.yaml"))]
-    #[test_case(Manager::Rush, &Path::new("rush.json"))]
-    #[test_case(Manager::Npm, Path::new("package-lock.json"))]
-    #[test_case(Manager::Lerna, &Path::new("lerna.json"))]
-    fn asref_path(given: Manager, expected: &Path) {
+    #[test_case(Manager::Yarn, &Path::new("yarn.lock") ; "yarn")]
+    #[test_case(Manager::Pnpm, &Path::new("pnpm-workspace.yaml") ; "pnpm")]
+    #[test_case(Manager::Rush, &Path::new("rush.json") ; "rush")]
+    #[test_case(Manager::Npm, Path::new("package-lock.json") ; "npm")]
+    #[test_case(Manager::Lerna, &Path::new("lerna.json") ; "lerna")]
+    fn as_ref_path(given: Manager, expected: &Path) {
         let actual = given.as_ref();
+        assert_eq!(actual, expected);
+    }
+
+    #[test_case(&Path::new("yarn.lock"), Ok(Manager::Yarn) ; "yarn without stem")]
+    #[test_case(&Path::new("pnpm-workspace.yaml"), Ok(Manager::Pnpm) ; "pnpm without stem")]
+    #[test_case(&Path::new("rush.json"), Ok(Manager::Rush) ; "rush without stem")]
+    #[test_case(&Path::new("package-lock.json"), Ok(Manager::Npm) ; "npm without stem")]
+    #[test_case(&Path::new("lerna.json"), Ok(Manager::Lerna) ; "lerna without stem")]
+    #[test_case(&Path::new("/foo/yarn.lock"), Ok(Manager::Yarn) ; "yarn with stem")]
+    #[test_case(&Path::new("/bar/pnpm-workspace.yaml"), Ok(Manager::Pnpm) ; "pnpm with stem")]
+    #[test_case(&Path::new("/baz/rush.json"), Ok(Manager::Rush) ; "rush with stem")]
+    #[test_case(&Path::new("/quux/package-lock.json"), Ok(Manager::Npm) ; "npm with stem")]
+    #[test_case(&Path::new("/yolo/lerna.json"), Ok(Manager::Lerna) ; "lerna with stem")]
+    #[test_case(&Path::new("invalid"), Err(InvalidFileError(PathBuf::from("invalid"))) ; "invalid path")]
+    fn try_from_path(given: &Path, expected: Result<Manager, InvalidFileError>) {
+        let actual = given.try_into();
         assert_eq!(actual, expected);
     }
 }

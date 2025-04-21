@@ -9,8 +9,20 @@ use super::manager::{self, Manager, SEARCH_ORDER};
 pub enum RootError {
     #[error(transparent)]
     Io(#[from] io::Error),
-    #[error(transparent)]
-    Manager(#[from] manager::Error),
+    #[error("{0}")]
+    Manager(String),
+}
+
+impl From<manager::ParseManagerError> for RootError {
+    fn from(error: manager::ParseManagerError) -> Self {
+        Self::Manager(error.to_string())
+    }
+}
+
+impl From<manager::InvalidFileError> for RootError {
+    fn from(error: manager::InvalidFileError) -> Self {
+        Self::Manager(error.to_string())
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -21,20 +33,13 @@ pub struct Root {
 
 impl Root {
     pub fn new(cwd: impl AsRef<Path>) -> Result<Self, RootError> {
-        let (manager, mut path) = match Manager::preferred().map_err(manager::Error::from)? {
-            Some(manager) => {
-                let path = search_up(cwd, [&manager])?;
-                (manager, path)
-            }
-            None => {
-                let path = search_up(cwd, SEARCH_ORDER)?;
-                let manager = Manager::try_from(path.as_ref()).map_err(manager::Error::from)?;
-                (manager, path)
-            }
-        };
+        if let Some(manager) = Manager::preferred()? {
+            return Ok(Self::with_manager(cwd, manager)?);
+        }
 
+        let mut path = search_up(cwd, SEARCH_ORDER)?;
+        let manager = Manager::try_from(path.as_ref())?;
         path.pop(); // Truncate to the manager file's parent path.
-
         Ok(Self { manager, path })
     }
 
@@ -49,7 +54,7 @@ fn search_up(
     cwd: impl AsRef<Path>,
     files: impl IntoIterator<Item = impl AsRef<Path>>,
 ) -> io::Result<PathBuf> {
-    // TODO: Are these necessary and/or good? Should cwd be canonicalized?
+    // TODO: Are these conversions necessary and/or good? Should cwd be canonicalized?
     let mut cwd = cwd.as_ref().to_path_buf();
     let files: Vec<_> = files.into_iter().map(|p| p.as_ref().to_owned()).collect();
 
