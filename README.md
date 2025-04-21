@@ -1,4 +1,4 @@
-# Atelier
+# JS Workspace
 
 A Rusty interpretation of [workspace-tools].
 
