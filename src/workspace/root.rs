@@ -33,7 +33,7 @@ pub struct Root {
 
 impl Root {
     pub fn new(cwd: impl AsRef<Path>) -> Result<Self, RootError> {
-        if let Some(manager) = Manager::preferred()? {
+        if let Some(manager) = Manager::from_env()? {
             return Ok(Self::with_manager(cwd, manager)?);
         }
 

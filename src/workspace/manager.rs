@@ -50,7 +50,7 @@ impl FromStr for Manager {
 }
 
 impl Manager {
-    pub fn preferred() -> Result<Option<Manager>, ParseManagerError> {
+    pub fn from_env() -> Result<Option<Manager>, ParseManagerError> {
         match env::var(PREFERRED_WORKSPACE_MANAGER) {
             Ok(var) => Ok(Some(var.parse()?)),
             Err(_err) => Ok(None), // TODO: Maybe add some logging here?
