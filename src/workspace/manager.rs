@@ -61,11 +61,11 @@ impl Manager {
 impl AsRef<Path> for Manager {
     fn as_ref(&self) -> &Path {
         match self {
-            Manager::Yarn => &Path::new("yarn.lock"),
-            Manager::Pnpm => &Path::new("pnpm-workspace.yaml"),
-            Manager::Rush => &Path::new("rush.json"),
-            Manager::Npm => &Path::new("package-lock.json"),
-            Manager::Lerna => &Path::new("lerna.json"),
+            Manager::Yarn => Path::new("yarn.lock"),
+            Manager::Pnpm => Path::new("pnpm-workspace.yaml"),
+            Manager::Rush => Path::new("rush.json"),
+            Manager::Npm => Path::new("package-lock.json"),
+            Manager::Lerna => Path::new("lerna.json"),
         }
     }
 }
