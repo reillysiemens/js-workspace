@@ -91,9 +91,22 @@ impl Manager {
             }
         }
     }
-}
 
-// Removed TryFrom<&Path> impl; use `Manager::search` instead.
+    /// Searches upward from `cwd` for this specific manager's root file only.
+    /// Returns the path to the discovered root file, or NotFound if none was found.
+    pub fn find(self, cwd: impl AsRef<Path>) -> io::Result<PathBuf> {
+        let mut dir = cwd.as_ref().canonicalize()?;
+        loop {
+            let candidate = dir.join(self.root_file());
+            if candidate.exists() {
+                return Ok(candidate);
+            }
+            if !dir.pop() {
+                return Err(io::Error::from(io::ErrorKind::NotFound));
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
