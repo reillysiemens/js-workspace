@@ -81,10 +81,10 @@ impl TryFrom<&Path> for Manager {
     fn try_from(path: &Path) -> Result<Self, Self::Error> {
         match path.file_name().and_then(OsStr::to_str) {
             Some("yarn.lock") => Ok(Self::Yarn),
-            Some("pnpm-workspace.yaml") => Ok(Manager::Pnpm),
-            Some("rush.json") => Ok(Manager::Rush),
-            Some("package-lock.json") => Ok(Manager::Npm),
-            Some("lerna.json") => Ok(Manager::Lerna),
+            Some("pnpm-workspace.yaml") => Ok(Self::Pnpm),
+            Some("rush.json") => Ok(Self::Rush),
+            Some("package-lock.json") => Ok(Self::Npm),
+            Some("lerna.json") => Ok(Self::Lerna),
             _ => Err(InvalidFileError(path.to_path_buf())),
         }
     }
