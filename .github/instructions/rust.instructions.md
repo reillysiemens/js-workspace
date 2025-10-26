@@ -1,3 +1,8 @@
+---
+description: "Microsoft Rust Guidelines"
+applyTo: "**/*.rs"
+---
+
 <!-- Copyright (c) Microsoft Corporation. Licensed under the MIT license. -->
 
 # Pragmatic Rust Guidelines
