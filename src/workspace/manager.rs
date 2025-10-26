@@ -42,18 +42,16 @@ impl FromStr for Manager {
 impl Manager {
     // DO NOT REORDER! This order determines the precedence of the files, which is
     // important for cases like lerna where lerna.json and e.g. yarn.lock may both exist.
-    const SEARCH_ORDER: &[(Self, &str)] = &[
-        (Manager::Lerna, "lerna.json"),
-        (Manager::Rush, "rush.json"),
-        (Manager::Yarn, "yarn.lock"),
-        (Manager::Pnpm, "pnpm-workspace.yaml"),
-        (Manager::Npm, "package-lock.json"),
+    const SEARCH_ORDER: &[Self] = &[
+        Manager::Lerna,
+        Manager::Rush,
+        Manager::Yarn,
+        Manager::Pnpm,
+        Manager::Npm,
     ];
 
     pub fn root_files_in_search_order() -> impl Iterator<Item = &'static Path> {
-        Self::SEARCH_ORDER
-            .iter()
-            .map(|&(_variant, path)| Path::new(path))
+        Self::SEARCH_ORDER.iter().map(|m| m.root_file())
     }
 
     pub fn from_env() -> Result<Option<Manager>, ParseManagerError> {
@@ -86,14 +84,14 @@ impl TryFrom<&Path> for Manager {
     type Error = InvalidFileError;
 
     fn try_from(path: &Path) -> Result<Self, Self::Error> {
-        match path.file_name().and_then(OsStr::to_str) {
-            Some("yarn.lock") => Ok(Self::Yarn),
-            Some("pnpm-workspace.yaml") => Ok(Self::Pnpm),
-            Some("rush.json") => Ok(Self::Rush),
-            Some("package-lock.json") => Ok(Self::Npm),
-            Some("lerna.json") => Ok(Self::Lerna),
-            _ => Err(InvalidFileError(path.to_path_buf())),
+        if let Some(name) = path.file_name().and_then(OsStr::to_str) {
+            for m in Self::SEARCH_ORDER {
+                if m.root_filename() == name {
+                    return Ok(*m);
+                }
+            }
         }
+        Err(InvalidFileError(path.to_path_buf()))
     }
 }
 
