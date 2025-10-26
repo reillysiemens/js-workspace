@@ -9,20 +9,8 @@ use super::manager::{self, Manager};
 pub enum RootError {
     #[error(transparent)]
     Io(#[from] io::Error),
-    #[error("{0}")]
-    Manager(String),
-}
-
-impl From<manager::ParseManagerError> for RootError {
-    fn from(error: manager::ParseManagerError) -> Self {
-        Self::Manager(error.to_string())
-    }
-}
-
-impl From<manager::InvalidFileError> for RootError {
-    fn from(error: manager::InvalidFileError) -> Self {
-        Self::Manager(error.to_string())
-    }
+    #[error(transparent)]
+    Manager(#[from] manager::ParseManagerError),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -39,7 +27,8 @@ impl Root {
 
         let files: Vec<_> = Manager::root_files_in_search_order().collect();
         let mut path = search_up(cwd.as_ref(), &files)?;
-        let manager = Manager::try_from(path.as_ref())?;
+        let manager = Manager::try_from(path.as_ref())
+            .expect("root file discovered via search order should parse into a Manager");
         path.pop(); // Truncate to the manager file's parent path.
 
         Ok(Self { manager, path })
