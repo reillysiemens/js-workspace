@@ -24,20 +24,17 @@ impl Root {
         if let Some(manager) = Manager::from_env()? {
             return Ok(Self::with_manager(cwd, manager)?);
         }
-        let (manager, mut file_path) = Manager::search(cwd)?;
-        file_path.pop(); // parent directory of root file
-        Ok(Self {
-            manager,
-            path: file_path,
-        })
+
+        let (manager, mut path) = Manager::search(cwd)?;
+        path.pop(); // Truncate to the manager file's parent path.
+
+        Ok(Self { manager, path })
     }
 
     pub fn with_manager(cwd: impl AsRef<Path>, manager: Manager) -> io::Result<Self> {
-        let mut file_path = manager.find(cwd)?;
-        file_path.pop();
-        Ok(Self {
-            manager,
-            path: file_path,
-        })
+        let mut path = manager.find(cwd)?;
+        path.pop(); // Truncate to the manager file's parent path.
+
+        Ok(Self { manager, path })
     }
 }
