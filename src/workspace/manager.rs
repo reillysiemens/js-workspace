@@ -63,16 +63,21 @@ impl Manager {
         }
     }
 
-    /// Returns the canonical root file used to identify this manager.
+    /// Returns the canonical root file path used to identify this manager.
     ///
     /// The returned path is relative.
     pub fn root_file(&self) -> &Path {
+        Path::new(self.root_filename())
+    }
+
+    /// Returns the canonical root filename used to identify this manager.
+    fn root_filename(&self) -> &'static str {
         match self {
-            Manager::Yarn => Path::new("yarn.lock"),
-            Manager::Pnpm => Path::new("pnpm-workspace.yaml"),
-            Manager::Rush => Path::new("rush.json"),
-            Manager::Npm => Path::new("package-lock.json"),
-            Manager::Lerna => Path::new("lerna.json"),
+            Manager::Yarn => "yarn.lock",
+            Manager::Pnpm => "pnpm-workspace.yaml",
+            Manager::Rush => "rush.json",
+            Manager::Npm => "package-lock.json",
+            Manager::Lerna => "lerna.json",
         }
     }
 }
