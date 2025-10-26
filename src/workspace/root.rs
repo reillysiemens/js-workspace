@@ -37,14 +37,14 @@ impl Root {
             return Ok(Self::with_manager(cwd, manager)?);
         }
 
-        let mut path = search_up(cwd, SEARCH_ORDER)?;
+        let mut path = search_up(cwd, SEARCH_ORDER.iter().map(Manager::root_file))?;
         let manager = Manager::try_from(path.as_ref())?;
         path.pop(); // Truncate to the manager file's parent path.
         Ok(Self { manager, path })
     }
 
     pub fn with_manager(cwd: impl AsRef<Path>, manager: Manager) -> io::Result<Self> {
-        let mut path = search_up(cwd, [&manager])?;
+        let mut path = search_up(cwd, [manager.root_file()])?;
         path.pop();
         Ok(Self { manager, path })
     }

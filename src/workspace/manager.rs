@@ -56,10 +56,11 @@ impl Manager {
             Err(_err) => Ok(None), // TODO: Maybe add some logging here?
         }
     }
-}
 
-impl AsRef<Path> for Manager {
-    fn as_ref(&self) -> &Path {
+    /// Returns the canonical root file used to identify this manager.
+    ///
+    /// The returned path is relative.
+    pub fn root_file(&self) -> &Path {
         match self {
             Manager::Yarn => Path::new("yarn.lock"),
             Manager::Pnpm => Path::new("pnpm-workspace.yaml"),
@@ -114,8 +115,8 @@ mod tests {
     #[test_case(Manager::Rush, &Path::new("rush.json") ; "rush")]
     #[test_case(Manager::Npm, Path::new("package-lock.json") ; "npm")]
     #[test_case(Manager::Lerna, &Path::new("lerna.json") ; "lerna")]
-    fn as_ref_path(given: Manager, expected: &Path) {
-        let actual = given.as_ref();
+    fn root_file(given: Manager, expected: &Path) {
+        let actual = given.root_file();
         assert_eq!(actual, expected);
     }
 
