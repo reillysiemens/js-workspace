@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use super::manager::{self, Manager, SEARCH_ORDER};
+use super::manager::{self, Manager};
 
 #[derive(Debug, thiserror::Error)]
 pub enum RootError {
@@ -37,7 +37,7 @@ impl Root {
             return Ok(Self::with_manager(cwd, manager)?);
         }
 
-        let mut path = search_up(cwd, SEARCH_ORDER.iter().map(Manager::root_file))?;
+        let mut path = search_up(cwd, Manager::root_files_in_search_order())?;
         let manager = Manager::try_from(path.as_ref())?;
         path.pop(); // Truncate to the manager file's parent path.
         Ok(Self { manager, path })

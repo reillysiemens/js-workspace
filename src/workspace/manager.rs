@@ -7,16 +7,6 @@ use std::{
 
 use crate::env::PREFERRED_WORKSPACE_MANAGER;
 
-// DO NOT REORDER! This order determines the precedence of the files, which is
-// important for cases like lerna where lerna.json and e.g. yarn.lock may both exist.
-pub(crate) const SEARCH_ORDER: &[Manager] = &[
-    Manager::Lerna,
-    Manager::Rush,
-    Manager::Yarn,
-    Manager::Pnpm,
-    Manager::Npm,
-];
-
 #[derive(Debug, PartialEq, Eq, thiserror::Error)]
 #[error("Invalid manager: {0}")]
 pub struct ParseManagerError(String);
@@ -50,6 +40,20 @@ impl FromStr for Manager {
 }
 
 impl Manager {
+    // DO NOT REORDER! This order determines the precedence of the files, which is
+    // important for cases like lerna where lerna.json and e.g. yarn.lock may both exist.
+    const SEARCH_ORDER: &[Self] = &[
+        Manager::Lerna,
+        Manager::Rush,
+        Manager::Yarn,
+        Manager::Pnpm,
+        Manager::Npm,
+    ];
+
+    pub fn root_files_in_search_order() -> impl Iterator<Item = &'static Path> {
+        Self::SEARCH_ORDER.iter().map(Self::root_file)
+    }
+
     pub fn from_env() -> Result<Option<Manager>, ParseManagerError> {
         match env::var(PREFERRED_WORKSPACE_MANAGER) {
             Ok(var) => Ok(Some(var.parse()?)),
