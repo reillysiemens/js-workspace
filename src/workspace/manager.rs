@@ -45,10 +45,6 @@ impl Manager {
         Manager::Npm,
     ];
 
-    pub fn root_files_in_search_order() -> impl Iterator<Item = &'static Path> {
-        Self::SEARCH_ORDER.iter().map(|m| m.root_file())
-    }
-
     pub fn from_env() -> Result<Option<Manager>, ParseManagerError> {
         match env::var(PREFERRED_WORKSPACE_MANAGER) {
             Ok(var) => Ok(Some(var.parse()?)),
