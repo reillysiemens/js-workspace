@@ -24,14 +24,12 @@ impl Root {
         if let Some(manager) = Manager::from_env()? {
             return Ok(Self::with_manager(cwd, manager)?);
         }
-
-        let files: Vec<_> = Manager::root_files_in_search_order().collect();
-        let mut path = search_up(cwd.as_ref(), &files)?;
-        let manager = Manager::try_from(path.as_ref())
-            .expect("root file discovered via search order should parse into a Manager");
-        path.pop(); // Truncate to the manager file's parent path.
-
-        Ok(Self { manager, path })
+        let (manager, mut file_path) = Manager::search(cwd.as_ref())?;
+        file_path.pop(); // parent directory of root file
+        Ok(Self {
+            manager,
+            path: file_path,
+        })
     }
 
     pub fn with_manager(cwd: impl AsRef<Path>, manager: Manager) -> io::Result<Self> {

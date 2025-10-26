@@ -1,6 +1,5 @@
 use std::{
-    env,
-    ffi::OsStr,
+    env, io,
     path::{Path, PathBuf},
     str::FromStr,
 };
@@ -10,10 +9,6 @@ use crate::env::PREFERRED_WORKSPACE_MANAGER;
 #[derive(Debug, PartialEq, Eq, thiserror::Error)]
 #[error("Invalid manager: {0}")]
 pub struct ParseManagerError(String);
-
-#[derive(Debug, PartialEq, Eq, thiserror::Error)]
-#[error("Invalid manager file: {0}")]
-pub struct InvalidFileError(PathBuf);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Manager {
@@ -78,22 +73,27 @@ impl Manager {
             Manager::Lerna => "lerna.json",
         }
     }
-}
 
-impl TryFrom<&Path> for Manager {
-    type Error = InvalidFileError;
-
-    fn try_from(path: &Path) -> Result<Self, Self::Error> {
-        if let Some(name) = path.file_name().and_then(OsStr::to_str) {
+    /// Searches upward from `cwd` for any manager root file in precedence order.
+    /// Returns the first match as `(Manager, PathBuf)` where the path points to the
+    /// discovered root file. The caller may truncate to the parent directory.
+    pub fn search(cwd: impl AsRef<Path>) -> io::Result<(Manager, PathBuf)> {
+        let mut dir = cwd.as_ref().canonicalize()?;
+        loop {
             for m in Self::SEARCH_ORDER {
-                if m.root_filename() == name {
-                    return Ok(*m);
+                let candidate = dir.join(m.root_file());
+                if candidate.exists() {
+                    return Ok((*m, candidate));
                 }
             }
+            if !dir.pop() {
+                return Err(io::Error::from(io::ErrorKind::NotFound));
+            }
         }
-        Err(InvalidFileError(path.to_path_buf()))
     }
 }
+
+// Removed TryFrom<&Path> impl; use `Manager::search` instead.
 
 #[cfg(test)]
 mod tests {
@@ -126,22 +126,6 @@ mod tests {
     #[test_case(Manager::Lerna, &Path::new("lerna.json") ; "lerna")]
     fn root_file(given: Manager, expected: &Path) {
         let actual = given.root_file();
-        assert_eq!(actual, expected);
-    }
-
-    #[test_case(&Path::new("yarn.lock"), Ok(Manager::Yarn) ; "yarn without stem")]
-    #[test_case(&Path::new("pnpm-workspace.yaml"), Ok(Manager::Pnpm) ; "pnpm without stem")]
-    #[test_case(&Path::new("rush.json"), Ok(Manager::Rush) ; "rush without stem")]
-    #[test_case(&Path::new("package-lock.json"), Ok(Manager::Npm) ; "npm without stem")]
-    #[test_case(&Path::new("lerna.json"), Ok(Manager::Lerna) ; "lerna without stem")]
-    #[test_case(&Path::new("/foo/yarn.lock"), Ok(Manager::Yarn) ; "yarn with stem")]
-    #[test_case(&Path::new("/bar/pnpm-workspace.yaml"), Ok(Manager::Pnpm) ; "pnpm with stem")]
-    #[test_case(&Path::new("/baz/rush.json"), Ok(Manager::Rush) ; "rush with stem")]
-    #[test_case(&Path::new("/quux/package-lock.json"), Ok(Manager::Npm) ; "npm with stem")]
-    #[test_case(&Path::new("/yolo/lerna.json"), Ok(Manager::Lerna) ; "lerna with stem")]
-    #[test_case(&Path::new("invalid"), Err(InvalidFileError(PathBuf::from("invalid"))) ; "invalid path")]
-    fn try_from_path(given: &Path, expected: Result<Manager, InvalidFileError>) {
-        let actual = given.try_into();
         assert_eq!(actual, expected);
     }
 }
