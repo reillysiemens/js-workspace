@@ -25,7 +25,7 @@ impl From<manager::InvalidFileError> for RootError {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Root {
     manager: Manager,
     path: PathBuf,

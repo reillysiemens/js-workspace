@@ -15,7 +15,7 @@ pub struct ParseManagerError(String);
 #[error("Invalid manager file: {0}")]
 pub struct InvalidFileError(PathBuf);
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Manager {
     Yarn,
     Pnpm,
