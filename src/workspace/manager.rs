@@ -42,16 +42,18 @@ impl FromStr for Manager {
 impl Manager {
     // DO NOT REORDER! This order determines the precedence of the files, which is
     // important for cases like lerna where lerna.json and e.g. yarn.lock may both exist.
-    const SEARCH_ORDER: &[Self] = &[
-        Manager::Lerna,
-        Manager::Rush,
-        Manager::Yarn,
-        Manager::Pnpm,
-        Manager::Npm,
+    const SEARCH_ORDER: &[(Self, &str)] = &[
+        (Manager::Lerna, "lerna.json"),
+        (Manager::Rush, "rush.json"),
+        (Manager::Yarn, "yarn.lock"),
+        (Manager::Pnpm, "pnpm-workspace.yaml"),
+        (Manager::Npm, "package-lock.json"),
     ];
 
     pub fn root_files_in_search_order() -> impl Iterator<Item = &'static Path> {
-        Self::SEARCH_ORDER.iter().map(Self::root_file)
+        Self::SEARCH_ORDER
+            .iter()
+            .map(|&(_variant, path)| Path::new(path))
     }
 
     pub fn from_env() -> Result<Option<Manager>, ParseManagerError> {
