@@ -56,14 +56,12 @@ impl Manager {
         }
     }
 
-    /// Returns the canonical root file path used to identify this manager.
-    ///
-    /// The returned path is relative.
+    /// Returns the root file used to identify this manager as a relative [Path].
     pub fn root_file(&self) -> &Path {
         Path::new(self.root_filename())
     }
 
-    /// Returns the canonical root filename used to identify this manager.
+    /// Returns the root filename used to identify this manager.
     fn root_filename(&self) -> &'static str {
         match self {
             Manager::Yarn => "yarn.lock",
@@ -76,7 +74,7 @@ impl Manager {
 
     /// Searches upward from `cwd` for any manager root file in precedence order.
     /// Returns the first match as `(Manager, PathBuf)` where the path points to the
-    /// discovered root file. The caller may truncate to the parent directory.
+    /// discovered root file.
     pub fn search(cwd: impl AsRef<Path>) -> io::Result<(Manager, PathBuf)> {
         let mut dir = cwd.as_ref().canonicalize()?;
         loop {
