@@ -1,9 +1,10 @@
 use std::{
-    io,
+    fs, io,
     path::{Path, PathBuf},
 };
 
 use super::manager::{self, Manager, SEARCH_ORDER};
+use super::package::RootPackage;
 
 #[derive(Debug, thiserror::Error)]
 pub enum RootError {
@@ -31,6 +32,8 @@ pub struct Root {
     path: PathBuf,
 }
 
+// TODO: Improve the error message that happens if a root is not found (e.g.
+// what happens if there is no `yarn.lock`?)
 impl Root {
     pub fn new(cwd: impl AsRef<Path>) -> Result<Self, RootError> {
         if let Some(manager) = Manager::from_env()? {
@@ -47,6 +50,12 @@ impl Root {
         let mut path = search_up(cwd, [&manager])?;
         path.pop();
         Ok(Self { manager, path })
+    }
+
+    pub fn packages(&self) {
+        let package = self.path.join("package.json");
+        let package = fs::read_to_string(package).unwrap();
+        let package: RootPackage = serde_json::from_str(&package).unwrap();
     }
 }
 
