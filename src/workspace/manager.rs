@@ -74,10 +74,10 @@ impl Manager {
     pub fn search(cwd: impl AsRef<Path>) -> io::Result<(Manager, PathBuf)> {
         let mut dir = cwd.as_ref().canonicalize()?;
         loop {
-            for m in Self::SEARCH_ORDER {
-                let candidate = dir.join(m.root_file());
+            for manager in Self::SEARCH_ORDER {
+                let candidate = dir.join(manager.root_file());
                 if candidate.exists() {
-                    return Ok((*m, candidate));
+                    return Ok((*manager, candidate));
                 }
             }
             if !dir.pop() {
