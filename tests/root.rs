@@ -11,17 +11,15 @@ use js_workspace::workspace::Root;
 #[test_case("rush.json" ; "rush")]
 #[test_case("package-lock.json" ; "npm")]
 #[test_case("lerna.json" ; "lerna")]
-fn finds_root_from_nested_directory(root_file: &str) -> anyhow::Result<()> {
+fn finds_root_from_workspace_root(root_file: &str) -> anyhow::Result<()> {
     // Arrange
     let tmp = tempfile::tempdir()?;
     let workspace = tmp.path().canonicalize()?;
-    let nested = workspace.join("packages/test-package");
     let root_file = workspace.join(root_file);
     fs::write(&root_file, "")?;
-    fs::create_dir_all(&nested)?;
 
     // Act
-    let root = Root::new(&nested)?;
+    let root = Root::new(&workspace)?;
 
     // Assert
     assert_eq!(root.path(), workspace);
@@ -35,15 +33,17 @@ fn finds_root_from_nested_directory(root_file: &str) -> anyhow::Result<()> {
 #[test_case("rush.json" ; "rush")]
 #[test_case("package-lock.json" ; "npm")]
 #[test_case("lerna.json" ; "lerna")]
-fn finds_root_from_workspace_root(root_file: &str) -> anyhow::Result<()> {
+fn finds_root_from_nested_directory(root_file: &str) -> anyhow::Result<()> {
     // Arrange
     let tmp = tempfile::tempdir()?;
     let workspace = tmp.path().canonicalize()?;
+    let nested = workspace.join("packages/test-package");
     let root_file = workspace.join(root_file);
     fs::write(&root_file, "")?;
+    fs::create_dir_all(&nested)?;
 
     // Act
-    let root = Root::new(&workspace)?;
+    let root = Root::new(&nested)?;
 
     // Assert
     assert_eq!(root.path(), workspace);
