@@ -52,11 +52,9 @@ impl Root {
         }
 
         // Check environment if enabled
-        if check_env {
-            if let Some(manager) = Manager::from_env()? {
-                let file = manager.locate(&cwd)?;
-                return Ok(Root { manager, file });
-            }
+        if check_env && let Some(manager) = Manager::from_env()? {
+            let file = manager.locate(&cwd)?;
+            return Ok(Root { manager, file });
         }
 
         // Discover manager from filesystem
