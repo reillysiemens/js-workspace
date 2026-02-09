@@ -71,7 +71,7 @@ impl Manager {
     /// Searches upward from `cwd` for any manager root file in precedence order.
     /// Returns the first match as `(Manager, PathBuf)` where the path points to the
     /// discovered root file.
-    pub fn search(cwd: impl AsRef<Path>) -> io::Result<(Manager, PathBuf)> {
+    pub fn discover(cwd: impl AsRef<Path>) -> io::Result<(Manager, PathBuf)> {
         let mut dir = cwd.as_ref().canonicalize()?;
         loop {
             for manager in Self::SEARCH_ORDER {
@@ -88,7 +88,7 @@ impl Manager {
 
     /// Searches upward from `cwd` for this specific manager's root file only.
     /// Returns the path to the discovered root file, or NotFound if none was found.
-    pub fn find(self, cwd: impl AsRef<Path>) -> io::Result<PathBuf> {
+    pub fn locate(self, cwd: impl AsRef<Path>) -> io::Result<PathBuf> {
         let mut dir = cwd.as_ref().canonicalize()?;
         loop {
             let candidate = dir.join(self.root_file());

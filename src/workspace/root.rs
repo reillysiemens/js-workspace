@@ -15,8 +15,10 @@ pub enum RootError {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Root {
+    // The manager that was found for this workspace root.
     manager: Manager,
-    path: PathBuf,
+    // The file which identifies the workspace root, e.g. `yarn.lock`.
+    file: PathBuf,
 }
 
 impl Root {
@@ -25,16 +27,20 @@ impl Root {
             return Ok(Self::with_manager(cwd, manager)?);
         }
 
-        let (manager, mut path) = Manager::search(cwd)?;
-        path.pop(); // Truncate to the manager file's parent path.
-
-        Ok(Self { manager, path })
+        let (manager, file) = Manager::discover(cwd)?;
+        Ok(Self { manager, file })
     }
 
     pub fn with_manager(cwd: impl AsRef<Path>, manager: Manager) -> io::Result<Self> {
-        let mut path = manager.find(cwd)?;
-        path.pop(); // Truncate to the manager file's parent path.
+        let file = manager.locate(cwd)?;
+        Ok(Self { manager, file })
+    }
 
-        Ok(Self { manager, path })
+    pub fn file(&self) -> &Path {
+        &self.file
+    }
+
+    pub fn path(&self) -> &Path {
+        self.file.parent().expect("file path has parent")
     }
 }

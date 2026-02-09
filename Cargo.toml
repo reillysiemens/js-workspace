@@ -7,5 +7,7 @@ edition = "2024"
 thiserror = "2.0.12"
 
 [dev-dependencies]
+anyhow = "1.0.101"
 pretty_assertions = "1.4.1"
+tempfile = "3.24.0"
 test-case = "3.3.1"
