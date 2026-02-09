@@ -47,13 +47,13 @@ impl Root {
     ) -> Result<Self, RootError> {
         // If manager is explicitly set, use it directly.
         if let Some(manager) = manager {
-            let file = manager.locate(&cwd)?;
+            let file = manager.locate(&cwd, ceiling.as_deref())?;
             return Ok(Root { manager, file });
         }
 
         // Check environment if enabled.
         if check_env && let Some(manager) = Manager::from_env()? {
-            let file = manager.locate(&cwd)?;
+            let file = manager.locate(&cwd, ceiling.as_deref())?;
             return Ok(Root { manager, file });
         }
 

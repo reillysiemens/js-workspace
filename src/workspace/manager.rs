@@ -97,9 +97,15 @@ impl Manager {
 
     /// Searches upward from `cwd` for this specific manager's root file only.
     /// Returns the path to the discovered root file, or NotFound if none was found.
-    pub fn locate(self, cwd: impl AsRef<Path>) -> io::Result<PathBuf> {
+    ///
+    /// If `ceiling` is provided, the search stops before reaching that directory.
+    pub fn locate(self, cwd: impl AsRef<Path>, ceiling: Option<&Path>) -> io::Result<PathBuf> {
         let mut dir = cwd.as_ref().canonicalize()?;
+        let ceiling = ceiling.map(|c| c.canonicalize()).transpose()?;
         loop {
+            if ceiling.as_deref() == Some(dir.as_path()) {
+                return Err(io::Error::from(io::ErrorKind::NotFound));
+            }
             let candidate = dir.join(self.root_file());
             if candidate.exists() {
                 return Ok(candidate);
