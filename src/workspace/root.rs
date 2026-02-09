@@ -21,19 +21,45 @@ pub struct Root {
     file: PathBuf,
 }
 
+#[bon::bon]
 impl Root {
-    pub fn new(cwd: impl AsRef<Path>) -> Result<Self, RootError> {
-        if let Some(manager) = Manager::from_env()? {
-            return Ok(Self::with_manager(cwd, manager)?);
-        }
-
-        let (manager, file) = Manager::discover(cwd)?;
-        Ok(Self { manager, file })
+    /// Discovers the workspace root from the current directory with default options.
+    pub fn discover() -> Result<Self, RootError> {
+        Self::builder().cwd(std::env::current_dir()?).build()
     }
 
-    pub fn with_manager(cwd: impl AsRef<Path>, manager: Manager) -> io::Result<Self> {
-        let file = manager.locate(cwd)?;
-        Ok(Self { manager, file })
+    /// Returns a builder for configuring workspace root discovery.
+    #[builder(start_fn = builder, finish_fn = build)]
+    pub fn __build(
+        /// The directory to start searching from.
+        #[builder(into)]
+        cwd: PathBuf,
+        /// Override manager discovery with a specific manager.
+        manager: Option<Manager>,
+        /// Stop searching at this directory (exclusive).
+        #[builder(into)]
+        ceiling: Option<PathBuf>,
+        /// Whether to check the environment for a preferred manager.
+        #[builder(default = true)]
+        check_env: bool,
+    ) -> Result<Self, RootError> {
+        // If manager is explicitly set, use it directly
+        if let Some(manager) = manager {
+            let file = manager.locate(&cwd)?;
+            return Ok(Root { manager, file });
+        }
+
+        // Check environment if enabled
+        if check_env {
+            if let Some(manager) = Manager::from_env()? {
+                let file = manager.locate(&cwd)?;
+                return Ok(Root { manager, file });
+            }
+        }
+
+        // Discover manager from filesystem
+        let (manager, file) = Manager::discover(&cwd, ceiling.as_deref())?;
+        Ok(Root { manager, file })
     }
 
     pub fn file(&self) -> &Path {

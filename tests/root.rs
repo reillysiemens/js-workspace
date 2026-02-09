@@ -1,6 +1,5 @@
 use std::fs;
 
-use anyhow::Ok;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
@@ -19,7 +18,7 @@ fn finds_root_from_workspace_root(root_file: &str) -> anyhow::Result<()> {
     fs::write(&root_file, "")?;
 
     // Act
-    let root = Root::new(&workspace)?;
+    let root = Root::builder().cwd(&workspace).build()?;
 
     // Assert
     assert_eq!(root.path(), workspace);
@@ -43,7 +42,7 @@ fn finds_root_from_nested_directory(root_file: &str) -> anyhow::Result<()> {
     fs::create_dir_all(&nested)?;
 
     // Act
-    let root = Root::new(&nested)?;
+    let root = Root::builder().cwd(&nested).build()?;
 
     // Assert
     assert_eq!(root.path(), workspace);
@@ -66,7 +65,7 @@ fn respects_manager_precedence(files: &[&str], expected: &str) -> anyhow::Result
     }
 
     // Act
-    let root = Root::new(&workspace)?;
+    let root = Root::builder().cwd(&workspace).build()?;
 
     // Assert
     assert_eq!(root.file(), workspace.join(expected));

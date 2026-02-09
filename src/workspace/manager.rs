@@ -71,9 +71,18 @@ impl Manager {
     /// Searches upward from `cwd` for any manager root file in precedence order.
     /// Returns the first match as `(Manager, PathBuf)` where the path points to the
     /// discovered root file.
-    pub fn discover(cwd: impl AsRef<Path>) -> io::Result<(Manager, PathBuf)> {
+    ///
+    /// If `ceiling` is provided, the search stops before reaching that directory.
+    pub fn discover(
+        cwd: impl AsRef<Path>,
+        ceiling: Option<&Path>,
+    ) -> io::Result<(Manager, PathBuf)> {
         let mut dir = cwd.as_ref().canonicalize()?;
+        let ceiling = ceiling.map(|c| c.canonicalize()).transpose()?;
         loop {
+            if ceiling.as_deref() == Some(dir.as_path()) {
+                return Err(io::Error::from(io::ErrorKind::NotFound));
+            }
             for manager in Self::SEARCH_ORDER {
                 let candidate = dir.join(manager.root_file());
                 if candidate.exists() {
