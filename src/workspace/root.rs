@@ -1,5 +1,5 @@
 use std::{
-    io,
+    env, io,
     path::{Path, PathBuf},
 };
 
@@ -27,7 +27,7 @@ pub struct Root {
 impl Root {
     /// Discovers the workspace root from the current directory with default options.
     pub fn discover() -> Result<Self, RootError> {
-        Self::builder().cwd(std::env::current_dir()?).build()
+        Self::builder().cwd(env::current_dir()?).build()
     }
 
     /// Returns a builder for configuring workspace root discovery.
@@ -45,19 +45,19 @@ impl Root {
         #[builder(default = true)]
         check_env: bool,
     ) -> Result<Self, RootError> {
-        // If manager is explicitly set, use it directly
+        // If manager is explicitly set, use it directly.
         if let Some(manager) = manager {
             let file = manager.locate(&cwd)?;
             return Ok(Root { manager, file });
         }
 
-        // Check environment if enabled
+        // Check environment if enabled.
         if check_env && let Some(manager) = Manager::from_env()? {
             let file = manager.locate(&cwd)?;
             return Ok(Root { manager, file });
         }
 
-        // Discover manager from filesystem
+        // Discover manager from filesystem.
         let (manager, file) = Manager::discover(&cwd, ceiling.as_deref())?;
         Ok(Root { manager, file })
     }
