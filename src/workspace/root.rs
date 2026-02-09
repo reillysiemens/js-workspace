@@ -3,6 +3,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use bon::bon;
+
 use super::manager::{self, Manager};
 
 #[derive(Debug, thiserror::Error)]
@@ -21,7 +23,7 @@ pub struct Root {
     file: PathBuf,
 }
 
-#[bon::bon]
+#[bon]
 impl Root {
     /// Discovers the workspace root from the current directory with default options.
     pub fn discover() -> Result<Self, RootError> {
@@ -29,8 +31,8 @@ impl Root {
     }
 
     /// Returns a builder for configuring workspace root discovery.
-    #[builder(start_fn = builder, finish_fn = build)]
-    pub fn __build(
+    #[builder]
+    pub fn new(
         /// The directory to start searching from.
         #[builder(into)]
         cwd: PathBuf,
