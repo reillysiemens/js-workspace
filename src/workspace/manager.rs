@@ -1,5 +1,5 @@
 use std::{
-    env, io,
+    env, fmt, io,
     path::{Path, PathBuf},
     str::FromStr,
 };
@@ -17,6 +17,18 @@ pub enum Manager {
     Rush,
     Npm,
     Lerna,
+}
+
+impl fmt::Display for Manager {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Manager::Yarn => "yarn",
+            Manager::Pnpm => "pnpm",
+            Manager::Rush => "rush",
+            Manager::Npm => "npm",
+            Manager::Lerna => "lerna",
+        })
+    }
 }
 
 impl FromStr for Manager {
@@ -148,6 +160,16 @@ mod tests {
     #[test_case(Manager::Lerna, &Path::new("lerna.json") ; "lerna")]
     fn root_file(given: Manager, expected: &Path) {
         let actual = given.root_file();
+        assert_eq!(actual, expected);
+    }
+
+    #[test_case(Manager::Yarn, "yarn" ; "yarn")]
+    #[test_case(Manager::Pnpm, "pnpm" ; "pnpm")]
+    #[test_case(Manager::Rush, "rush" ; "rush")]
+    #[test_case(Manager::Npm, "npm" ; "npm")]
+    #[test_case(Manager::Lerna, "lerna" ; "lerna")]
+    fn display_manager(given: Manager, expected: &str) {
+        let actual = given.to_string();
         assert_eq!(actual, expected);
     }
 }
