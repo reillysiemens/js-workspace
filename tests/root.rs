@@ -10,10 +10,9 @@ fn returns_not_found_when_no_manager_file_exists() -> anyhow::Result<()> {
     // Arrange
     let tmp = tempfile::tempdir()?;
     let workspace = tmp.path();
-    let ceiling = workspace.parent().expect("tempdir has parent");
 
     // Act
-    let actual = Root::builder().cwd(workspace).ceiling(ceiling).build();
+    let actual = Root::builder().cwd(workspace).ceiling(workspace).build();
 
     // Assert
     assert!(matches!(
@@ -119,13 +118,12 @@ fn explicit_manager_override_returns_not_found_when_manager_file_is_absent() -> 
     // Arrange
     let tmp = tempfile::tempdir()?;
     let workspace = tmp.path();
-    let ceiling = workspace.parent().expect("tempdir has parent");
 
     // Act
     let actual = Root::builder()
         .cwd(workspace)
         .manager(Manager::Pnpm)
-        .ceiling(ceiling)
+        .ceiling(workspace)
         .build();
 
     // Assert
@@ -138,20 +136,38 @@ fn explicit_manager_override_returns_not_found_when_manager_file_is_absent() -> 
 }
 
 #[test]
-fn ceiling_stops_search_before_reaching_ceiling_directory() -> anyhow::Result<()> {
+fn finds_root_when_cwd_is_ceiling_directory() -> anyhow::Result<()> {
+    // Arrange
+    let tmp = tempfile::tempdir()?;
+    let repo = tmp.path().canonicalize()?;
+    let root_file = repo.join("yarn.lock");
+    fs::write(&root_file, "")?;
+
+    // Act
+    let root = Root::builder().cwd(&repo).ceiling(&repo).build()?;
+
+    // Assert
+    assert_eq!(root.path(), repo);
+    assert_eq!(root.file(), root_file);
+
+    Ok(())
+}
+
+#[test]
+fn ceiling_prevents_searching_above_ceiling_directory() -> anyhow::Result<()> {
     // Arrange
     let tmp = tempfile::tempdir()?;
     let home = tmp.path().join("home");
     let project = home.join("projects/js-workspace");
     fs::create_dir_all(&project)?;
-    fs::write(home.join("yarn.lock"), "")?;
+    fs::write(tmp.path().join("yarn.lock"), "")?;
 
     // Act
     let actual = Root::builder().cwd(&project).ceiling(&home).build();
 
     // Assert
     assert!(matches!(
-        actual.expect_err("ceiling should exclude home directory"),
+        actual.expect_err("ceiling should exclude parent directory"),
         RootError::Io(error) if error.kind() == io::ErrorKind::NotFound
     ));
 
@@ -175,6 +191,26 @@ fn finds_nested_root_below_ceiling() -> anyhow::Result<()> {
     // Assert
     assert_eq!(root.path(), workspace);
     assert_eq!(root.file(), root_file);
+
+    Ok(())
+}
+
+#[test]
+fn rejects_ceiling_below_cwd() -> anyhow::Result<()> {
+    // Arrange
+    let tmp = tempfile::tempdir()?;
+    let workspace = tmp.path().join("workspace");
+    let package = workspace.join("packages/test-package");
+    fs::create_dir_all(&package)?;
+
+    // Act
+    let actual = Root::builder().cwd(&workspace).ceiling(&package).build();
+
+    // Assert
+    assert!(matches!(
+        actual.expect_err("ceiling below cwd should be rejected"),
+        RootError::Io(error) if error.kind() == io::ErrorKind::InvalidInput
+    ));
 
     Ok(())
 }

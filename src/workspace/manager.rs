@@ -84,24 +84,21 @@ impl Manager {
     /// Returns the first match as `(Manager, PathBuf)` where the path points to the
     /// discovered root file.
     ///
-    /// If `ceiling` is provided, the search stops before reaching that directory.
+    /// If `ceiling` is provided, the search includes that directory but does
+    /// not continue above it.
     pub fn discover(
         cwd: impl AsRef<Path>,
         ceiling: Option<&Path>,
     ) -> io::Result<(Manager, PathBuf)> {
-        let mut dir = cwd.as_ref().canonicalize()?;
-        let ceiling = ceiling.map(|c| c.canonicalize()).transpose()?;
+        let (mut dir, ceiling) = search_bounds(cwd.as_ref(), ceiling)?;
         loop {
-            if ceiling.as_deref() == Some(dir.as_path()) {
-                return Err(io::Error::from(io::ErrorKind::NotFound));
-            }
             for manager in Self::SEARCH_ORDER {
                 let candidate = dir.join(manager.root_file());
                 if candidate.exists() {
                     return Ok((*manager, candidate));
                 }
             }
-            if !dir.pop() {
+            if ceiling.as_deref() == Some(dir.as_path()) || !dir.pop() {
                 return Err(io::Error::from(io::ErrorKind::NotFound));
             }
         }
@@ -110,23 +107,39 @@ impl Manager {
     /// Searches upward from `cwd` for this specific manager's root file only.
     /// Returns the path to the discovered root file, or NotFound if none was found.
     ///
-    /// If `ceiling` is provided, the search stops before reaching that directory.
+    /// If `ceiling` is provided, the search includes that directory but does
+    /// not continue above it.
     pub fn locate(self, cwd: impl AsRef<Path>, ceiling: Option<&Path>) -> io::Result<PathBuf> {
-        let mut dir = cwd.as_ref().canonicalize()?;
-        let ceiling = ceiling.map(|c| c.canonicalize()).transpose()?;
+        let (mut dir, ceiling) = search_bounds(cwd.as_ref(), ceiling)?;
         loop {
-            if ceiling.as_deref() == Some(dir.as_path()) {
-                return Err(io::Error::from(io::ErrorKind::NotFound));
-            }
             let candidate = dir.join(self.root_file());
             if candidate.exists() {
                 return Ok(candidate);
             }
-            if !dir.pop() {
+            if ceiling.as_deref() == Some(dir.as_path()) || !dir.pop() {
                 return Err(io::Error::from(io::ErrorKind::NotFound));
             }
         }
     }
+}
+
+fn search_bounds(cwd: &Path, ceiling: Option<&Path>) -> io::Result<(PathBuf, Option<PathBuf>)> {
+    let cwd = cwd.canonicalize()?;
+    let ceiling = ceiling.map(|ceiling| ceiling.canonicalize()).transpose()?;
+    if let Some(ceiling) = &ceiling
+        && !cwd.starts_with(ceiling)
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "ceiling {} is not an ancestor of cwd {}",
+                ceiling.display(),
+                cwd.display()
+            ),
+        ));
+    }
+
+    Ok((cwd, ceiling))
 }
 
 #[cfg(test)]

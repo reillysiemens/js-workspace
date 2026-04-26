@@ -38,7 +38,7 @@ impl Root {
         cwd: PathBuf,
         /// Override manager discovery with a specific manager.
         manager: Option<Manager>,
-        /// Stop searching at this directory (exclusive).
+        /// Stop searching after checking this directory.
         #[builder(into)]
         ceiling: Option<PathBuf>,
         /// Whether to check the environment for a preferred manager.
