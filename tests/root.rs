@@ -31,12 +31,12 @@ fn returns_not_found_when_no_manager_file_exists() -> anyhow::Result<()> {
 fn finds_root_from_workspace_root(root_file: &str) -> anyhow::Result<()> {
     // Arrange
     let tmp = tempfile::tempdir()?;
-    let workspace = tmp.path().canonicalize()?;
+    let workspace = tmp.path();
     let root_file = workspace.join(root_file);
     fs::write(&root_file, "")?;
 
     // Act
-    let root = Root::builder().cwd(&workspace).build()?;
+    let root = Root::builder().cwd(workspace).build()?;
 
     // Assert
     assert_eq!(root.path(), workspace);
@@ -53,7 +53,7 @@ fn finds_root_from_workspace_root(root_file: &str) -> anyhow::Result<()> {
 fn finds_root_from_nested_directory(root_file: &str) -> anyhow::Result<()> {
     // Arrange
     let tmp = tempfile::tempdir()?;
-    let workspace = tmp.path().canonicalize()?;
+    let workspace = tmp.path();
     let nested = workspace.join("packages/test-package");
     let root_file = workspace.join(root_file);
     fs::write(&root_file, "")?;
@@ -77,13 +77,13 @@ fn finds_root_from_nested_directory(root_file: &str) -> anyhow::Result<()> {
 fn respects_manager_precedence(files: &[&str], expected: &str) -> anyhow::Result<()> {
     // Arrange
     let tmp = tempfile::tempdir()?;
-    let workspace = tmp.path().canonicalize()?;
+    let workspace = tmp.path();
     for file in files {
         fs::write(workspace.join(file), "")?;
     }
 
     // Act
-    let root = Root::builder().cwd(&workspace).build()?;
+    let root = Root::builder().cwd(workspace).build()?;
 
     // Assert
     assert_eq!(root.file(), workspace.join(expected));
@@ -95,7 +95,7 @@ fn respects_manager_precedence(files: &[&str], expected: &str) -> anyhow::Result
 fn explicit_manager_override_ignores_precedence() -> anyhow::Result<()> {
     // Arrange
     let tmp = tempfile::tempdir()?;
-    let workspace = tmp.path().canonicalize()?;
+    let workspace = tmp.path();
     let unexpected = workspace.join("lerna.json");
     let expected = workspace.join("pnpm-workspace.yaml");
     fs::write(&unexpected, "")?;
@@ -103,7 +103,7 @@ fn explicit_manager_override_ignores_precedence() -> anyhow::Result<()> {
 
     // Act
     let root = Root::builder()
-        .cwd(&workspace)
+        .cwd(workspace)
         .manager(Manager::Pnpm)
         .build()?;
 
@@ -139,12 +139,12 @@ fn explicit_manager_override_returns_not_found_when_manager_file_is_absent() -> 
 fn finds_root_when_cwd_is_ceiling_directory() -> anyhow::Result<()> {
     // Arrange
     let tmp = tempfile::tempdir()?;
-    let repo = tmp.path().canonicalize()?;
+    let repo = tmp.path();
     let root_file = repo.join("yarn.lock");
     fs::write(&root_file, "")?;
 
     // Act
-    let root = Root::builder().cwd(&repo).ceiling(&repo).build()?;
+    let root = Root::builder().cwd(repo).ceiling(repo).build()?;
 
     // Assert
     assert_eq!(root.path(), repo);
@@ -178,7 +178,7 @@ fn ceiling_prevents_searching_above_ceiling_directory() -> anyhow::Result<()> {
 fn finds_nested_root_below_ceiling() -> anyhow::Result<()> {
     // Arrange
     let tmp = tempfile::tempdir()?;
-    let ceiling = tmp.path().canonicalize()?;
+    let ceiling = tmp.path();
     let workspace = ceiling.join("monorepo");
     let nested = workspace.join("packages/test-package");
     let root_file = workspace.join("yarn.lock");
@@ -186,7 +186,7 @@ fn finds_nested_root_below_ceiling() -> anyhow::Result<()> {
     fs::write(&root_file, "")?;
 
     // Act
-    let root = Root::builder().cwd(&nested).ceiling(&ceiling).build()?;
+    let root = Root::builder().cwd(&nested).ceiling(ceiling).build()?;
 
     // Assert
     assert_eq!(root.path(), workspace);
