@@ -1,5 +1,5 @@
 pub mod manager;
-pub mod root;
+mod workspace;
 
 pub use manager::Manager;
-pub use root::Root;
+pub use workspace::{Package, Workspace, WorkspaceError};

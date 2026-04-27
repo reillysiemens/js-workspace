@@ -19,6 +19,18 @@ pub enum Manager {
     Lerna,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct ManagerMarker {
+    pub(crate) kind: Manager,
+    pub(crate) file: PathBuf,
+}
+
+impl ManagerMarker {
+    pub(crate) fn root(&self) -> &Path {
+        self.file.parent().expect("marker file path has parent")
+    }
+}
+
 impl fmt::Display for Manager {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
@@ -81,21 +93,23 @@ impl Manager {
     }
 
     /// Searches upward from `cwd` for any manager root file in precedence order.
-    /// Returns the first match as `(Manager, PathBuf)` where the path points to the
-    /// discovered root file.
+    /// Returns the first match.
     ///
     /// If `ceiling` is provided, the search includes that directory but does
     /// not continue above it.
-    pub fn discover(
+    pub(crate) fn discover(
         cwd: impl AsRef<Path>,
         ceiling: Option<&Path>,
-    ) -> io::Result<(Manager, PathBuf)> {
+    ) -> io::Result<ManagerMarker> {
         let (mut dir, ceiling) = search_bounds(cwd.as_ref(), ceiling)?;
         loop {
             for manager in Self::SEARCH_ORDER {
                 let candidate = dir.join(manager.root_file());
                 if candidate.exists() {
-                    return Ok((*manager, candidate));
+                    return Ok(ManagerMarker {
+                        kind: *manager,
+                        file: candidate,
+                    });
                 }
             }
             if ceiling.as_deref() == Some(dir.as_path()) || !dir.pop() {
@@ -105,16 +119,23 @@ impl Manager {
     }
 
     /// Searches upward from `cwd` for this specific manager's root file only.
-    /// Returns the path to the discovered root file, or NotFound if none was found.
+    /// Returns the discovered marker, or NotFound if none was found.
     ///
     /// If `ceiling` is provided, the search includes that directory but does
     /// not continue above it.
-    pub fn locate(self, cwd: impl AsRef<Path>, ceiling: Option<&Path>) -> io::Result<PathBuf> {
+    pub(crate) fn locate(
+        self,
+        cwd: impl AsRef<Path>,
+        ceiling: Option<&Path>,
+    ) -> io::Result<ManagerMarker> {
         let (mut dir, ceiling) = search_bounds(cwd.as_ref(), ceiling)?;
         loop {
             let candidate = dir.join(self.root_file());
             if candidate.exists() {
-                return Ok(candidate);
+                return Ok(ManagerMarker {
+                    kind: self,
+                    file: candidate,
+                });
             }
             if ceiling.as_deref() == Some(dir.as_path()) || !dir.pop() {
                 return Err(io::Error::from(io::ErrorKind::NotFound));

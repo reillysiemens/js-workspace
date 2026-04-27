@@ -84,18 +84,24 @@ this manager," not necessarily "parsed marker file."
 3. Introduce an internal marker result, e.g. `{ kind, file }`, if useful.
 4. Introduce a private `WorkspaceManager` that owns the marker path and package
    layout.
-5. Replace the public high-level `Root` type with `Workspace`, or keep `Root`
-   only as a lower-level marker-discovery type if that remains useful.
-6. Add package-discovery parsing one manager kind at a time, starting with
-   package-json workspaces for npm/yarn.
+5. Replace the public high-level `Root` type with `Workspace`.
+6. Add package-discovery parsing for package-json workspaces, pnpm, Rush, and
+   Lerna package patterns or fallback workspace configuration.
+
+## Implemented first pass
+
+- The public high-level type is now `Workspace`; `Root` has been removed rather
+  than kept as a public marker-only abstraction.
+- `Manager` remains the public typed manager choice, while marker discovery now
+  returns an internal marker value.
+- A private `WorkspaceManager` owns the discovered marker and parsed package
+  layout.
+- `Workspace::build()` parses enough workspace configuration to prove a package
+  layout exists, but `Workspace::packages()` performs package-path resolution.
 
 ## Open design questions
 
-- Should `Root` remain public as a marker-root type, or should it disappear
-  behind `Workspace`?
-- Should `Workspace::build()` parse only the workspace layout, or also resolve
-  package paths?
 - Should `WorkspaceManager` stay entirely private, or should any manager details
   be exposed for diagnostics or tooling?
-- How should Lerna fallback be represented without leaking manager dispatch to
-  callers?
+- How much package metadata should `Workspace::packages()` eventually return
+  beyond the package path?
